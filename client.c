@@ -4,50 +4,64 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#define PORT 8888
+#define DATA_MAXSIZE 1024
+
 int main(int argc, char *argv[]) {
-  int socketDesc;
+  int socket_desc;
   struct sockaddr_in server;
-  char *message, server_reply[2000];
+  char message[DATA_MAXSIZE], server_reply[DATA_MAXSIZE];
+
+  if (argc != 2) {
+    fprintf(stderr, "Usage: client <nickname>\n\nExample:\nclient marcosgz\n\n");
+    return 1;
+  }
+  char *nickname = argv[1];
 
   // AF_INET - IPv4, SOCK_STREAM - tcp, 0 - IP
-  socketDesc = socket(AF_INET, SOCK_STREAM, 0);
+  socket_desc = socket(AF_INET, SOCK_STREAM, 0);
 
-  if (socketDesc == -1) {
-    printf("Não foi possivel criar o socket.\n");
+  if (socket_desc == -1) {
+    puts("Ooops. It was not possible to create a socket.");
     return 1;
   }
 
-  server.sin_addr.s_addr = inet_addr("0.0.0.0");
+  server.sin_addr.s_addr = inet_addr("127.0.0.1");
   server.sin_family = AF_INET;
-  server.sin_port = htons(80);
+  server.sin_port = htons(PORT);
 
-  if (connect(socketDesc, (struct sockaddr *)&server, sizeof(server)) == -1) {
-    printf("Não foi possivel conectar-se.\n");
+  if (connect(socket_desc, (struct sockaddr *)&server, sizeof(server)) == -1) {
+    puts("Oops. Could not connect to the server.");
     return 1;
   }
 
-  printf("Connected.\n");
+  do {
+    if (recv(socket_desc, server_reply, DATA_MAXSIZE, 0) < 0) {
+      puts("[Internal] Oops. Coult not receve message from server");
+      return 1;
+    }
+    printf("%s\n", server_reply);
+    bzero(server_reply, sizeof(server_reply));
 
-  // Envia dados
-  message = "GET / HTTP/1.1\r\n\r\n";
-  if (send(socketDesc, message, strlen(message), 0) < 0) {
-    printf("Falha ao enviar.\n");
-    return 1;
-  }
+    printf("(Digite a mensagem OU \"exit\" para sair) > ");
+    bzero(message, sizeof(message)); // clear the message
+    int ch, n = 0;
+    while ((ch = getchar()) != '\n' && n < DATA_MAXSIZE) {
+      message[n] = ch;
+      ++n;
+    }
 
-  printf("Dados enviados.\n");
+    char buf[DATA_MAXSIZE];
+    snprintf(buf, sizeof buf, "[%s] %s", nickname, message);
 
-  // Recebe resposta do servidor
-  if (recv(socketDesc, server_reply, 2000, 0) < 0) {
-    printf("Falha ao receber.\n");
-    return 1;
-  }
-
-  printf("Resposta recebida.\n");
-  puts(server_reply);
+    if (send(socket_desc, buf, strlen(buf), 0) < 0) {
+      puts("[Internal] Oops. Could not send this message");
+      return 1;
+    }
+  } while (strcmp(message, "exit") != 0);
 
   // termina o socket
-  close(socketDesc);
+  close(socket_desc);
 
   return 0;
 }
