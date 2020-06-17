@@ -9,7 +9,7 @@ Um simples chat cliente/servidor ANSI C.
 2. Clone o repositório
 
 ```
-git clone https://github.com/marcosgz/sockets
+git clone https://github.com/marcosgz/c-chat
 ```
 
 3. Entre no diretório do repositório
