@@ -14,7 +14,7 @@ git clone https://github.com/marcosgz/c-chat
 
 3. Entre no diretório do repositório
 ```
-cd sockets/
+cd c-chat/
 ```
 
 4. Compile os arquivos
